@@ -1,0 +1,209 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+<script src="jquery-1.9.1.min.js"></script>
+<script src="glam.js" ></script>
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
+
+<title>glam - street view move!</title>
+
+<style>
+body {
+    margin: 0px;
+    background-color: #000;
+}
+
+#container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+#svl {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 50%;
+}
+
+#svr {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 50%;
+}
+
+.gmnoprint, .gm-style-cc {
+    display: none;
+}
+
+.torus {
+    color: blue;
+    specular-color: lightblue;
+    diffuse-color: darkblue;
+    /*shader: lambert;*/
+    opacity: 0.8;
+}
+</style>
+
+<script>
+
+var scene = null;
+var move = false;
+var moving;
+var panorama, panorama2;
+
+function createRing() {
+    var groupelt = document.createElement('group');
+    groupelt.setAttribute('class', 'ring');
+    groupelt.setAttribute('y', -1);
+
+    var toruselt = document.createElement('torus');
+    toruselt.setAttribute('class', 'torus');
+    toruselt.setAttribute('radius', '2');
+    toruselt.setAttribute('tube', '.1');
+    toruselt.setAttribute('rx', 90 * (Math.PI/180));
+
+    toruselt.addEventListener('viewover', function(event) {
+        move = !move;
+
+        if (move) {
+            this.glam.style.color = 'green';
+            this.glam.style['specular-color'] = 'lightgreen';
+            this.glam.style['diffuse-color'] = 'darkgreen';
+            this.glam.style['ambient-color'] = 'green';
+
+            moving = setInterval(function() {
+
+                heading = panorama.getPov().heading;
+                diff = 180;
+
+                    links = panorama.getLinks();
+                for (i in links) {
+                    link = links[i];
+                    newdiff = Math.abs(((heading - link.heading + 180 + 360) % 360) - 180);
+                    if (newdiff < diff) {
+                        diff = newdiff;
+                        newpano = link.pano;
+                    }
+                }
+
+                if (diff < 15) {
+                    panorama.setPano(newpano);
+                    panorama2.setPano(newpano);
+                }
+                //ringelt = $('.ring')[0];
+                //vrcamera = glam.viewers[docname].app.controllerScript.camera;
+
+                //vrcamera.translateZ(-0.1);
+
+                //ringelt.setAttribute('x', vrcamera.position.x);
+                //ringelt.setAttribute('y', vrcamera.position.y - 1);
+                //ringelt.setAttribute('z', vrcamera.position.z);
+            }, 600);
+        } else {
+            this.glam.style.color = 'blue';
+            this.glam.style['specular-color'] = 'lightblue';
+            this.glam.style['diffuse-color'] = 'darkblue';
+            clearInterval(moving);
+        }
+    });
+
+    groupelt.appendChild(toruselt);
+
+    return groupelt;
+}
+
+function initSV() {
+    var Jerusalem = new google.maps.LatLng(31.775513, 35.234002);
+    var panoramaOptions = {
+        position: Jerusalem,
+        pov: {
+            heading: 96.77,
+            pitch: 90
+        },
+        zoomControl: false
+    };
+    panorama = new google.maps.StreetViewPanorama(document.getElementById('svl'), panoramaOptions);
+    panorama2 = new google.maps.StreetViewPanorama(document.getElementById('svr'), panoramaOptions);
+}
+
+var fullscreen = false;
+
+$(document).ready(function(){
+
+    glam.ready();
+    scene = document.getElementsByTagName('scene')[0];
+
+    initSV();
+    r = createRing();
+    scene.appendChild(r);
+
+    vrc = glam.viewers[docname].app.controllerScript.controls;
+    window.addEventListener('deviceorientation', function () {
+        //console.log(vrc.alpha + ' ' + vrc.beta + ' ' + vrc.gamma);
+        if (vrc.gamma == 0) {
+            pitch = 0;
+            heading = -vrc.alpha * (180/Math.PI);
+        } else if (vrc.gamma < 0) {
+            pitch = Math.abs(-1 * vrc.gamma * (180/Math.PI) - 90) * -1;
+            heading = 360 - ((vrc.alpha * (180/Math.PI) + 180) % 360);
+        } else {
+            pitch = Math.abs(-1 * vrc.gamma * (180/Math.PI) + 90);
+            heading = 360 - (vrc.alpha * (180/Math.PI));
+        }
+
+        //console.log('pitch:' + pitch + ' heading:' + heading + ' alpha:' + vrc.alpha + ' -> ' + -vrc.alpha * (180/Math.PI));
+
+        panorama.setPov({ 
+            heading: heading, 
+            pitch: pitch
+        });
+        panorama2.setPov({ 
+            heading: heading, 
+            pitch: pitch
+        });
+    }, true);
+    /*
+       glam.viewers[docname].scene.transform.object.add(ring);
+     */
+    var canvas = Vizi.Graphics.instance.renderer.domElement;
+    $('body')[0].addEventListener("touchstart", function(event) {
+        if (!fullscreen) {
+            //Vizi.Graphics.instance.setFullScreen(true);
+            $('body')[0].webkitRequestFullscreen();
+            fullscreen = true;    		
+        }
+    });
+
+});
+
+</script>
+</head>
+
+    <body>
+        <div id="svl"></div>
+        <div id="svr"></div>
+
+        <!-- 
+            The scene: cardboard renderer, VR controller, and that's it
+        -->
+        <div id="container">
+            <glam>
+                <scene>
+                    <renderer type="cardboard"></renderer>
+                    <controller type="deviceOrientation"></controller>
+                </scene>
+            </glam>
+        </div>
+
+    </body>
+</html>
