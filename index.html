@@ -57,7 +57,10 @@ body {
 <script>
 
 var scene = null;
+var mode = 'left';
 var move = false;
+var vrc;
+var ring;
 var moving;
 var panorama, panorama2;
 
@@ -191,8 +194,8 @@ $(document).ready(function(){
     scene = document.getElementsByTagName('scene')[0];
 
     initSV();
-    r = createRing();
-    scene.appendChild(r);
+    ring = createRing();
+    scene.appendChild(ring);
 
     vrc = glam.viewers[docname].app.controllerScript.controls;
     window.addEventListener('deviceorientation', function () {
@@ -206,6 +209,36 @@ $(document).ready(function(){
         } else {
             pitch = Math.abs(-1 * vrc.gamma * (180/Math.PI) + 90);
             heading = 360 - (vrc.alpha * (180/Math.PI));
+        }
+
+        // lock pitch in 'right' mode
+        // pitch controls zoom
+        if (mode == 'right') {
+            pitch = panorama.getPov().pitch;
+
+            if (pitch > oldpitch + 5) {
+                oldpitch += 5;
+
+                zoom = panorama.getZoom() + 1;
+            } else if (pitch < oldpitch - 5) {
+                oldpitch -= 5;
+
+                zoom = panorama.getZoom() - 1;
+            }
+
+            panorama.setZoom(zoom);
+            panorama2.setZoom(zoom);
+        }
+        
+        // Switch left/right mode
+        roll = vrc.beta * (180/Math.PI);
+
+        if (roll >= 30) {
+            mode = 'right';
+            $('.ring .torus').remove();
+        } else if (roll <= -30) {
+            mode = 'left';
+            scene.appendChild(ring);
         }
 
         //console.log('pitch:' + pitch + ' heading:' + heading + ' alpha:' + vrc.alpha + ' -> ' + -vrc.alpha * (180/Math.PI));
