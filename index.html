@@ -134,6 +134,53 @@ function initSV() {
     };
     panorama = new google.maps.StreetViewPanorama(document.getElementById('svl'), panoramaOptions);
     panorama2 = new google.maps.StreetViewPanorama(document.getElementById('svr'), panoramaOptions);
+  
+    // Synchronizing
+    google.maps.event.addListener(panorama, 'pano_changed', function(event) {
+      if(!this.blockEvents) {
+        panorama2.blockEvents = true;
+        panorama2.setPano(panorama.getPano());
+        panorama2.blockEvents = false;
+      }
+    });
+  google.maps.event.addListener(panorama, 'pov_changed', function(event) {
+    if(!this.blockEvents) {
+      panorama2.blockEvents = true;
+      panorama2.setPov(panorama.getPov());
+      panorama2.blockEvents = false;
+    }
+  });
+  google.maps.event.addListener(panorama, 'zoom_changed', function(event) {
+    if(!this.blockEvents) {
+      panorama2.blockEvents = true;
+      panorama2.setZoom(panorama.getZoom());
+      panorama2.blockEvents = false;
+    }
+  });
+  panorama.blockEvents = false;
+
+    google.maps.event.addListener(panorama2, 'pano_changed', function(event) {
+      if(!this.blockEvents) {
+        panorama.blockEvents = true;
+        panorama.setPano(panorama2.getPano());
+        panorama.blockEvents = false;
+      }
+    });
+  google.maps.event.addListener(panorama2, 'pov_changed', function(event) {
+    if(!this.blockEvents) {
+      panorama.blockEvents = true;
+      panorama.setPov(panorama2.getPov());
+      panorama.blockEvents = false;
+    }
+  });
+  google.maps.event.addListener(panorama2, 'zoom_changed', function(event) {
+    if(!this.blockEvents) {
+      panorama.blockEvents = true;
+      panorama.setZoom(panorama2.getZoom());
+      panorama.blockEvents = false;
+    }
+  });
+  panorama2.blockEvents = false;
 }
 
 var fullscreen = false;
