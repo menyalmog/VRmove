@@ -138,7 +138,7 @@ function initSV() {
     panorama = new google.maps.StreetViewPanorama(document.getElementById('svl'), panoramaOptions);
     panorama2 = new google.maps.StreetViewPanorama(document.getElementById('svr'), panoramaOptions);
   
-    // Synchronizing
+    /*/ Synchronizing
     google.maps.event.addListener(panorama, 'pano_changed', function(event) {
       if(!this.blockEvents) {
         panorama2.blockEvents = true;
@@ -184,6 +184,7 @@ function initSV() {
     }
   });
   panorama2.blockEvents = false;
+  */
 }
 
 var fullscreen = false;
@@ -235,7 +236,9 @@ $(document).ready(function(){
 
         if (roll >= 30) {
             mode = 'right';
-            $('.ring .torus').remove();
+            oldpitch = panorama.getPov().pitch;
+            //$('.ring').remove();
+            //console.log(scene.glam);
         } else if (roll <= -30) {
             mode = 'left';
             scene.appendChild(ring);
